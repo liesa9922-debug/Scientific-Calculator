@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scientific Calculator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+        }
+
+        /* Glassmorphism Effect */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* Custom Scrollbar for History */
+        .history-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .history-scroll::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        .history-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+        .history-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Button Animations */
+        .calc-btn {
+            transition: all 0.1s ease;
+        }
+        .calc-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Display Glow */
+        .display-glow {
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+        }
+        
+        /* Hide number input spinners */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+
+    <div class="glass-panel w-full max-w-4xl rounded-3xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-auto max-h-[900px]">
+        
+        <!-- Sidebar / History Panel -->
+        <div class="hidden md:flex flex-col w-64 bg-slate-900/50 border-r border-white/10 p-4">
+            <div class="flex justify-between items-center mb-4 text-slate-400">
+                <span class="text-sm font-bold tracking-wider">HISTORY</span>
+                <button onclick="clearHistory()" class="hover:text-red-400 transition-colors" title="Clear History">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+            <div id="history-list" class="flex-1 history-scroll overflow-y-auto space-y-3 text-right text-sm">
+                <div class="text-slate-600 text-center italic mt-10">No history yet</div>
+            </div>
+        </div>
+
+        <!-- Main Calculator Area -->
+        <div class="flex-1 flex flex-col p-4 sm:p-6">
+            
+            <!-- Mobile History Toggle -->
+            <div class="md:hidden flex justify-end mb-2">
+                <button onclick="toggleMobileHistory()" class="text-slate-400 hover:text-white">
+                    <i class="fas fa-history"></i>
+                </button>
+            </div>
+
+            <!-- Mobile History Overlay -->
+            <div id="mobile-history" class="fixed inset-0 z-50 bg-slate-900/95 hidden flex-col p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-white text-xl">History</h2>
+                    <button onclick="toggleMobileHistory()" class="text-white text-xl"><i class="fas fa-times"></i></button>
+                </div>
+                <div id="mobile-history-list" class="flex-1 overflow-y-auto space-y-4 text-right"></div>
+                <button onclick="clearHistory(); toggleMobileHistory()" class="mt-4 w-full py-3 bg-red-500/20 text-red-400 rounded-xl">Clear History</button>
+            </div>
+
+            <!-- Display Screen -->
+            <div class="bg-slate-950/50 rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 flex flex-col justify-end items-end h-32 sm:h-40 border border-white/5 relative">
+                <!-- Mode Indicator -->
+                <div class="absolute top-4 left-4">
+                    <button id="mode-toggle" onclick="toggleMode()" class="text-xs font-bold px-2 py-1 rounded bg-slate-800 text-cyan-400 border border-cyan-900/50 hover:bg-slate-700 transition-colors">
+                        DEG
+                    </button>
+                </div>
+
+                <!-- Previous Expression -->
+                <div id="prev-display" class="text-slate-400 text-sm sm:text-base h-6 overflow-hidden mb-1 break-all"></div>
+                
+                <!-- Current Input -->
+                <input type="text" id="display" class="w-full bg-transparent text-right text-3xl sm:text-4xl md:text-5xl text-white font-light focus:outline-none display-glow" value="0" readonly>
+            </div>
+
+            <!-- Keypad -->
+            <div class="grid grid-cols-5 gap-2 sm:gap-3 flex-1">
+                
+                <!-- Row 1 -->
+                <button onclick="calculateFunc('sin')" class="calc-btn p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium bg-slate-800 text-cyan-400 hover:bg-slate-700">sin</button>
+                <button onclick="calculateFunc('cos')" class="calc-btn p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium bg-slate-800 text-cyan-400 hover:bg-slate-700">cos</button>
+                <button onclick="calculateFunc('tan')" class="calc-btn p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium bg-slate-800 text-cyan-400 hover:bg-slate-700">tan</button>
+                <button onclick="clearDisplay()" class="calc-btn p-3 sm:p-4 rounded-xl text-sm sm:text-base font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 col-span-2">AC</button>
+
+                <!-- Row 2 -->
+                <button onclick="calculateFunc('ln')" class="calc-btn p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium bg-slate-800 text-cyan-400 hover:bg-slate-700">ln</button>
+                <button onclick="calculateFunc('log')" class="calc-btn p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium bg-slate-800 text-cyan-400 hover:bg-slate-700">log</button>
+                <button onclick="appendDisplay('(')" class="calc-btn p-3 sm:p-4 rounded-xl text-sm font-medium bg-slate-700 text-slate-200 hover:bg-slate-600">(</button>
+                <button onclick="appendDisplay(')')" class="calc-btn p-3 sm:p-4 rounded-xl text-sm font-medium bg-slate-700 text-slate-200 hover:bg-slate-600">)</button>
+                <button onclick="deleteLast()" class="calc-btn p-3 sm:p-4 rounded-xl text-sm sm:text-base font-medium bg-orange-500/20 text-orange-400 hover:bg-orange-500/30"><i class="fas fa-backspace"></i></button>
+
+                <!-- Row 3 -->
+                <button onclick="appendDisplay('^')" class="calc-btn p-3 sm:p-4 rounded-xl text-sm font-medium bg-slate-800 text-cyan-400 hover:bg-slate-700">xʸ</button>
+                <button onclick="calculateFunc('sqrt')" class="calc-btn p-3 sm:p-4 rounded-xl text-sm font-medium bg-slate-800 text-cyan-400 hover:bg-slate-700">√</button>
+                <button onclick="appendNumber('7')" class="calc-btn p-3 sm:p-4 rounded-xl text-lg sm:text-xl font-medium bg-white/5 text-white hover:bg-white/10">7</button>
+                <button onclick="appendNumber('8')" class="calc-btn p-3 sm:p-4 rounded-xl text-lg sm:text-xl font-medium bg-white/5 text-white hover:bg-white/10">8</button>
+                <button onclick="appendNumber('9')" class="calc-btn p-3 sm:p-4 rounded-xl text-lg sm:text-xl font-medium bg-white/5 text-white hover:bg-white/10">9</button>
+
+                <!-- Row 4 -->
+                <button onclick="appendDisplay('!')" class="calc-btn p-3 sm:p-4 rounded-xl text-sm font-medium bg-slate-800 text-cyan-400 hover:bg-slate-700">x!</button>
+                <button onclick="appendDisplay('/')" class="calc-btn p-3 sm:p-4 rounded-xl text-lg sm:text-xl font-medium bg-slate-700 text-indigo-400 hover:bg-slate-600">÷</button>
+                <button onclick="appendNumber('4')" class="calc-btn p-3 sm:p-4 rounded-xl text-lg sm:text-xl font-medium bg-white/5 text-white hover:bg-white/10">4</button>
+                <button onclick="appendNumber('5')" class="calc-btn p-3 sm:p-4 rounded-xl text-lg sm:text-xl font-medium bg-white/5 text-white hover:bg-white/10">5</button>
+                <button onclick="appendNumber('6')" class="calc-btn p-3 sm:p-4 rounded-xl text-lg sm:text-xl font-medium bg-white/5 text-white hover:bg-white/10">6</button>
+
+                <!-- Row 5 -->
+                <button onclick="appendDisplay('π')" class="calc-btn p-3 sm:p-4 rounded-xl text-sm font-medium bg-slate-800 text-cyan-400 hover:bg-slate-700">π</button>
+                <button onclick="appendDisplay('*')" class="calc-btn p-3 sm:p-4 rounded-xl text-lg sm:text-xl font-medium bg-slate-700 text-indigo-400 hover:bg-slate-600">×</button>
+                <button onclick="appendNumber('1')" class="calc-btn p-3 sm:p-4 rounded-xl text-lg sm:text-xl font-medium bg-white/5 text-white hover:bg-white/10">1</button>
+                <button onclick="appendNumber('2')" class="calc-btn p-3 sm:p-4 rounded-xl text-lg sm:text-xl font-medium bg-white/5 text-white hover:bg-white/10">2</button>
+                <button onclick="appendNumber('3')" class="calc-btn p-3 sm:p-4 rounded-xl text-lg sm:text-xl font-medium bg-white/5 text-white hover:bg-white/10">3</button>
+
+                <!-- Row 6 -->
+                <button onclick="appendDisplay('e')" class="calc-btn p-3 sm:p-4 rounded-xl text-sm font-medium bg-slate-800 text-cyan-400 hover:bg-slate-700">e</button>
+                <button onclick="appendDisplay('-')" class="calc-btn p-3 sm:p-4 rounded-xl text-lg sm:text-xl font-medium bg-slate-700 text-indigo-400 hover:bg-slate-600">−</button>
+                <button onclick="appendNumber('0')" class="calc-btn p-3 sm:p-4 rounded-xl text-lg sm:text-xl font-medium bg-white/5 text-white hover:bg-white/10">0</button>
+                <button onclick="appendDisplay('.')" class="calc-btn p-3 sm:p-4 rounded-xl text-lg sm:text-xl font-medium bg-white/5 text-white hover:bg-white/10">.</button>
+                <button onclick="calculate()" class="calc-btn p-3 sm:p-4 rounded-xl text-lg sm:text-xl font-bold bg-cyan-600 text-white hover:bg-cyan-500 row-span-2 shadow-lg shadow-cyan-500/20">=</button>
+
+                <!-- Row 7 (Filling gap) -->
+                 <button onclick="appendDisplay('+')" class="calc-btn p-3 sm:p-4 rounded-xl text-lg sm:text-xl font-medium bg-slate-700 text-indigo-400 hover:bg-slate-600 col-start-2 col-span-1">+</button>
+                <!-- Empty spacers if needed for layout, but grid handles it -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentInput = "0";
+        let isResultDisplayed = false;
+        let isDegreeMode = true; // Default to Degrees
+        const display = document.getElementById('display');
+        const prevDisplay = document.getElementById('prev-display');
+        const historyList = document.getElementById('history-list');
+        const mobileHistoryList = document.getElementById('mobile-history-list');
+
+        // Initial Display Update
+        updateDisplay();
+
+        // Keyboard Support
+        document.addEventListener('keydown', (event) => {
+            const key = event.key;
+            if (/[0-9]/.test(key)) appendNumber(key);
+            if (['+', '-', '*', '/', '(', ')', '.', '^', '!'].includes(key)) appendDisplay(key);
+            if (key === 'Enter') calculate();
+            if (key === 'Backspace') deleteLast();
+            if (key === 'Escape') clearDisplay();
+        });
+
+        function toggleMode() {
+            isDegreeMode = !isDegreeMode;
+            const btn = document.getElementById('mode-toggle');
+            btn.textContent = isDegreeMode ? "DEG" : "RAD";
+        }
+
+        function toggleMobileHistory() {
+            const el = document.getElementById('mobile-history');
+            el.classList.toggle('hidden');
+            el.classList.toggle('flex');
+            // Sync content
+            mobileHistoryList.innerHTML = historyList.innerHTML;
+        }
+
+        function updateDisplay() {
+            display.value = currentInput;
+            // Auto scroll to end if long
+            display.scrollLeft = display.scrollWidth;
+        }
+
+        function appendNumber(num) {
+            if (isResultDisplayed) {
+                currentInput = num;
+                isResultDisplayed = false;
+                prevDisplay.innerText = "";
+            } else {
+                if (currentInput === "0") {
+                    currentInput = num;
+                } else {
+                    currentInput += num;
+                }
+            }
+            updateDisplay();
+        }
+
+        function appendDisplay(val) {
+            if (isResultDisplayed) {
+                isResultDisplayed = false;
+                prevDisplay.innerText = "Ans = " + currentInput;
+            }
+            
+            if (currentInput === "0" && val !== '.') {
+                currentInput = val;
+            } else {
+                currentInput += val;
+            }
+            updateDisplay();
+        }
+
+        function calculateFunc(funcName) {
+            if (isResultDisplayed) {
+                isResultDisplayed = false;
+                currentInput = funcName + "(" + currentInput + ")";
+            } else {
+                if (currentInput === "0") {
+                    currentInput = funcName + "(";
+                } else {
+                    currentInput += funcName + "(";
+                }
+            }
+            updateDisplay();
+        }
+
+        function clearDisplay() {
+            currentInput = "0";
+            prevDisplay.innerText = "";
+            isResultDisplayed = false;
+            updateDisplay();
+        }
+
+        function deleteLast() {
+            if (isResultDisplayed) {
+                clearDisplay();
+                return;
+            }
+            if (currentInput.length === 1 || currentInput === "Error") {
+                currentInput = "0";
+            } else {
+                currentInput = currentInput.slice(0, -1);
+            }
+            updateDisplay();
+        }
+
+        function factorial(n) {
+            if (n < 0) return NaN;
+            if (n === 0 || n === 1) return 1;
+            let result = 1;
+            for (let i = 2; i <= n; i++) result *= i;
+            return result;
+        }
+
+        function addToHistory(expression, result) {
+            const itemHTML = `
+                <div class="p-2 hover:bg-white/5 rounded transition-colors cursor-pointer border-b border-white/5" onclick="loadHistory('${result}')">
+                    <div class="text-xs text-slate-400">${expression} =</div>
+                    <div class="text-lg text-cyan-400 font-medium">${result}</div>
+                </div>
+            `;
+            
+            // Add to both desktop and mobile lists
+            const noHistoryMsg = document.querySelector('#history-list .italic');
+            if (noHistoryMsg) noHistoryMsg.remove();
+            
+            historyList.insertAdjacentHTML('afterbegin', itemHTML);
+            mobileHistoryList.insertAdjacentHTML('afterbegin', itemHTML);
+        }
+
+        function clearHistory() {
+            historyList.innerHTML = '<div class="text-slate-600 text-center italic mt-10">No history yet</div>';
+            mobileHistoryList.innerHTML = '<div class="text-slate-600 text-center italic mt-10">No history yet</div>';
+        }
+
+        function loadHistory(val) {
+            currentInput = val.toString();
+            isResultDisplayed = false;
+            updateDisplay();
+            // Close mobile menu if open
+            document.getElementById('mobile-history').classList.add('hidden');
+            document.getElementById('mobile-history').classList.remove('flex');
+        }
+
+        function calculate() {
+            let expression = currentInput;
+            let evalExpression = expression;
+
+            try {
+                // 1. Handle Pi and e
+                evalExpression = evalExpression.replace(/π/g, 'Math.PI');
+                evalExpression = evalExpression.replace(/e/g, 'Math.E');
+
+                // 2. Handle Factorial (simple regex for single number factorial: 5! -> factorial(5))
+                // This regex looks for a number followed by !
+                evalExpression = evalExpression.replace(/(\d+)!/g, 'factorial($1)');
+
+                // 3. Handle Powers (^) -> **
+                evalExpression = evalExpression.replace(/\^/g, '**');
+
+                // 4. Handle Square Root
+                evalExpression = evalExpression.replace(/sqrt\(/g, 'Math.sqrt(');
+
+                // 5. Handle Logs
+                evalExpression = evalExpression.replace(/log\(/g, 'Math.log10(');
+                evalExpression = evalExpression.replace(/ln\(/g, 'Math.log(');
+
+                // 6. Handle Trig functions with Mode check
+                // We use a regex to capture the number inside the parenthesis
+                // This simple parser assumes format sin(number) or sin(expression)
+                // Since this is client-side JS, we can wrap standard Math functions
+                // But to handle Degrees, we need to inject the conversion factor.
+                
+                const toRad = (deg) => deg * (Math.PI / 180);
+
+                // Define a scope for clean evaluation
+                const scope = {
+                    Math: Math,
+                    factorial: factorial,
+                    sin: (x) => isDegreeMode ? Math.sin(toRad(x)) : Math.sin(x),
+                    cos: (x) => isDegreeMode ? Math.cos(toRad(x)) : Math.cos(x),
+                    tan: (x) => isDegreeMode ? Math.tan(toRad(x)) : Math.tan(x),
+                };
+
+                // Prepare final string for Function constructor
+                // Replace function names with scope calls
+                evalExpression = evalExpression
+                    .replace(/\bsin\(/g, 'this.sin(')
+                    .replace(/\bcos\(/g, 'this.cos(')
+                    .replace(/\btan\(/g, 'this.tan(')
+                    .replace(/\bfactorial\(/g, 'this.factorial(');
+
+                // Safe evaluation using Function constructor bound to scope
+                // We must allow Math. functions to remain or map them.
+                // The previous replaces for sqrt, log, etc mapped to Math.X.
+                // We need 'Math' to be available in "this".
+                
+                // Final cleanup: ensure "Math." calls refer to "this.Math."
+                evalExpression = evalExpression.replace(/Math\./g, 'this.Math.');
+
+                const resultFunction = new Function('return ' + evalExpression);
+                let result = resultFunction.call(scope);
+
+                // Handle precision issues (e.g. 0.1 + 0.2)
+                if (!Number.isInteger(result)) {
+                    result = parseFloat(result.toFixed(8));
+                }
+                
+                // Handle Infinite/NaN
+                if (!isFinite(result) || isNaN(result)) {
+                    throw new Error("Invalid");
+                }
+
+                prevDisplay.innerText = expression + " =";
+                addToHistory(expression, result);
+                currentInput = result.toString();
+                isResultDisplayed = true;
+                updateDisplay();
+
+            } catch (error) {
+                prevDisplay.innerText = "Error";
+                currentInput = "Error";
+                isResultDisplayed = true;
+                updateDisplay();
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
