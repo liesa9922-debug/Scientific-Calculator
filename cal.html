@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Scientific Calculator</title>
+<style>
+  :root{
+    --bg:#16202b;
+    --panel:#22303a;
+    --accent:#ff7b7b;
+    --button:#e6eef2;
+    --btn-dark:#bfcad0;
+    --func:#2f4f63;
+    --text:#e9f2f6;
+    --grid-gap:8px;
+    --pad:14px;
+    --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  *{box-sizing:border-box}
+  body{
+    background: linear-gradient(180deg,#0f1720 0%, #122027 100%);
+    color:var(--text);
+    font-family:var(--font-sans);
+    display:flex;
+    min-height:100vh;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .calculator{
+    width:380px;
+    border-radius:14px;
+    background:linear-gradient(180deg,var(--panel), #1b2a31);
+    box-shadow: 0 10px 30px rgba(2,8,12,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+    padding:18px;
+  }
+  .header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-bottom:10px;
+  }
+  .title{
+    font-weight:700;
+    letter-spacing:1px;
+    font-size:18px;
+  }
+  .mode{
+    display:flex;
+    gap:8px;
+  }
+  .mode button{
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.06);
+    color:var(--text);
+    padding:6px 8px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .display{
+    background:linear-gradient(180deg,#0e1b21, #081217);
+    border-radius:10px;
+    padding:12px;
+    min-height:74px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    margin-bottom:14px;
+    box-shadow: inset 0 -6px 18px rgba(0,0,0,0.4);
+  }
+  .top-row{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+    color:#9fb2bc;
+  }
+  #output{
+    font-size:26px;
+    text-align:right;
+    letter-spacing:1px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .grid{
+    display:grid;
+    gap:var(--grid-gap);
+    grid-template-columns:repeat(6,1fr);
+    align-items:stretch;
+  }
+  button.btn{
+    padding:12px;
+    border-radius:8px;
+    border:0;
+    cursor:pointer;
+    font-weight:700;
+    font-size:14px;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+  }
+  /* groups */
+  .btn.func{ background:transparent; color:#cfeaf5; border:1px solid rgba(255,255,255,0.03); }
+  .btn.op{ background:var(--btn-dark); color:#0b1416; }
+  .btn.action{ background:var(--accent); color:white; }
+  .btn.memory{ background:#314a54; color:var(--text); }
+  .btn.equal{ background:#2aa7d6; color:white; grid-column:6 / 7; grid-row: 5 / 7; height:100%; }
+  .btn.big{ grid-column:1 / 3; }
+  .btn.wide{ grid-column:1 / 4; }
+  .btn.small{ padding:8px; font-size:13px; }
+  .footer{
+    margin-top:12px;
+    font-size:12px;
+    color:#8fa9b3;
+    display:flex;
+    justify-content:space-between;
+  }
+  /* responsive */
+  @media (max-width:420px){
+    .calculator{ width:100%; }
+  }
+</style>
+</head>
+<body>
+  <div class="calculator" role="application" aria-label="Scientific Calculator">
+    <div class="header">
+      <div class="title">SciCalc</div>
+      <div class="mode" title="Angle Mode">
+        <button id="degBtn">DEG</button>
+        <button id="radBtn">RAD</button>
+      </div>
+    </div>
+
+    <div class="display" aria-live="polite">
+      <div class="top-row">
+        <div id="memIndicator">M: 0</div>
+        <div id="ansIndicator">Ans: 0</div>
+      </div>
+      <div id="output" aria-label="Calculator display">0</div>
+    </div>
+
+    <div class="grid" id="buttons">
+      <!-- Row 1 -->
+      <button class="btn func memory" data-action="mc">MC</button>
+      <button class="btn func memory" data-action="mr">MR</button>
+      <button class="btn func memory" data-action="mplus">M+</button>
+      <button class="btn func memory" data-action="mminus">M-</button>
+      <button class="btn func" data-insert="(">(</button>
+      <button class="btn func" data-insert=")">)</button>
+
+      <!-- Row 2 -->
+      <button class="btn func" data-insert="sin(">sin</button>
+      <button class="btn func" data-insert="cos(">cos</button>
+      <button class="btn func" data-insert="tan(">tan</button>
+      <button class="btn func" data-insert="asin(">sin⁻¹</button>
+      <button class="btn func" data-insert="acos(">cos⁻¹</button>
+      <button class="btn func" data-insert="atan(">tan⁻¹</button>
+
+      <!-- Row 3 -->
+      <button class="btn func" data-insert="log(">log</button>
+      <button class="btn func" data-insert="ln(">ln</button>
+      <button class="btn func" data-insert="sqrt(">√</button>
+      <button class="btn func" data-insert="^">^</button>
+      <button class="btn func" data-insert="root(">ⁿ√</button>
+      <button class="btn func" data-insert="%">%</button>
+
+      <!-- Row 4 -->
+      <button class="btn func" data-insert="pi">π</button>
+      <button class="btn func" data-insert="e">e</button>
+      <button class="btn func" data-insert="ans">Ans</button>
+      <button class="btn func" data-action="fact">x!</button>
+      <button class="btn func" data-action="exp">exp</button>
+      <button class="btn func" data-action="rnd">Rnd</button>
+
+      <!-- Row 5 -->
+      <button class="btn op" data-insert="7">7</button>
+      <button class="btn op" data-insert="8">8</button>
+      <button class="btn op" data-insert="9">9</button>
+      <button class="btn op" data-insert="÷">÷</button>
+      <button class="btn op" data-insert="^2">x²</button>
+      <button class="btn op" data-action="del">DEL</button>
+
+      <!-- Row 6 -->
+      <button class="btn op" data-insert="4">4</button>
+      <button class="btn op" data-insert="5">5</button>
+      <button class="btn op" data-insert="6">6</button>
+      <button class="btn op" data-insert="×">×</button>
+      <button class="btn op" data-insert="^3">x³</button>
+      <button class="btn action" data-action="ac">AC</button>
+
+      <!-- Row 7 -->
+      <button class="btn op" data-insert="1">1</button>
+      <button class="btn op" data-insert="2">2</button>
+      <button class="btn op" data-insert="3">3</button>
+      <button class="btn op" data-insert="+">+</button>
+      <button class="btn op" data-insert="root2(">√y</button>
+      <button class="btn equal" data-action="equals">=</button>
+
+      <!-- Row 8 -->
+      <button class="btn op wide" data-insert="0">0</button>
+      <button class="btn op" data-insert=".">.</button>
+      <button class="btn op" data-insert="Ans">Ans</button>
+      <button class="btn op" data-insert="-">-</button>
+    </div>
+
+    <div class="footer">
+      <div>Click buttons or use keyboard</div>
+      <div>Built-in parser • DEG/RAD • Memory</div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // State
+  let mem = 0;
+  let ans = 0;
+  let degMode = true; // DEG by default
+  const display = document.getElementById('output');
+  const memIndicator = document.getElementById('memIndicator');
+  const ansIndicator = document.getElementById('ansIndicator');
+  const degBtn = document.getElementById('degBtn');
+  const radBtn = document.getElementById('radBtn');
+
+  // Initialize
+  updateMemIndicator();
+  updateAnsIndicator();
+  setModeButtons();
+
+  // Helpers for inserting
+  function insertText(txt){
+    if(display.textContent === '0' && txt !== '.' ) display.textContent = txt;
+    else display.textContent += txt;
+  }
+  function setText(txt){
+    display.textContent = String(txt);
+  }
+
+  // Button handling
+  document.getElementById('buttons').addEventListener('click', (e) => {
+    const target = e.target.closest('button');
+    if(!target) return;
+    const ins = target.dataset.insert;
+    const action = target.dataset.action;
+
+    if(ins) {
+      // some shortcuts: ^2 inserts ^2 etc.
+      insertText(ins);
+      return;
+    }
+    if(action) {
+      handleAction(action);
+      return;
+    }
+  });
+
+  // Action handlers
+  function handleAction(action){
+    const cur = display.textContent;
+    switch(action){
+      case 'ac':
+        setText('0');
+        break;
+      case 'del':
+        if(cur.length <= 1) setText('0');
+        else setText(cur.slice(0,-1));
+        break;
+      case 'equals':
+        try {
+          const res = evaluateExpression(cur);
+          ans = res;
+          setText(formatResult(res));
+          updateAnsIndicator();
+        } catch (err){
+          setText('Error');
+        }
+        break;
+      case 'mc':
+        mem = 0;
+        updateMemIndicator();
+        break;
+      case 'mr':
+        insertText(String(mem));
+        break;
+      case 'mplus':
+        try{
+          mem += evaluateExpression(cur);
+          updateMemIndicator();
+        }catch{ /* ignore */ }
+        break;
+      case 'mminus':
+        try{
+          mem -= evaluateExpression(cur);
+          updateMemIndicator();
+        }catch{ /* ignore */ }
+        break;
+      case 'fact':
+        try{
+          const n = Math.floor(Number(evaluateExpression(cur)));
+          if(!Number.isFinite(n) || n < 0) throw 'bad';
+          const r = factorial(n);
+          ans = r;
+          setText(formatResult(r));
+          updateAnsIndicator();
+        }catch(e){
+          setText('Error');
+        }
+        break;
+      case 'exp':
+        insertText('e^(');
+        break;
+      case 'rnd':
+        const r = Math.random();
+        setText(formatResult(r));
+        ans = r; updateAnsIndicator();
+        break;
+      default:
+        break;
+    }
+  }
+
+  // DEG/RAD toggles
+  degBtn.addEventListener('click', ()=>{ degMode = true; setModeButtons(); });
+  radBtn.addEventListener('click', ()=>{ degMode = false; setModeButtons(); });
+  function setModeButtons(){
+    degBtn.style.opacity = degMode ? '1' : '0.5';
+    radBtn.style.opacity = degMode ? '0.5' : '1';
+  }
+
+  function updateMemIndicator(){
+    memIndicator.textContent = 'M: ' + (mem === 0 ? '0' : formatResult(mem));
+  }
+  function updateAnsIndicator(){
+    ansIndicator.textContent = 'Ans: ' + formatResult(ans);
+  }
+
+  // Utility functions
+  function factorial(n){
+    if(n === 0 || n === 1) return 1;
+    let s = 1;
+    for(let i=2;i<=n;i++) s*=i;
+    return s;
+  }
+  function formatResult(x){
+    if(typeof x !== 'number' || !Number.isFinite(x)) return String(x);
+    // reduce floating error and long numbers
+    if(Math.abs(x) < 1e-12) return '0';
+    if(Math.abs(x) < 1e7 && Math.abs(x) > 1e-6) {
+      return +Number.parseFloat(x.toPrecision(12));
+    }
+    return x.toExponential(10);
+  }
+
+  // Create math functions passed to evaluator so we can handle DEG/RAD mode
+  function toRad(v){ return v * Math.PI / 180; }
+  function toDeg(v){ return v * 180 / Math.PI; }
+
+  // Define wrapper functions for trig and others
+  const mathScope = {
+    sin: (x)=> degMode ? Math.sin(toRad(x)) : Math.sin(x),
+    cos: (x)=> degMode ? Math.cos(toRad(x)) : Math.cos(x),
+    tan: (x)=> degMode ? Math.tan(toRad(x)) : Math.tan(x),
+    asin: (x)=> degMode ? toDeg(Math.asin(x)) : Math.asin(x),
+    acos: (x)=> degMode ? toDeg(Math.acos(x)) : Math.acos(x),
+    atan: (x)=> degMode ? toDeg(Math.atan(x)) : Math.atan(x),
+    sqrt: (x)=> Math.sqrt(x),
+    log: (x)=> Math.log10(x),
+    ln: (x)=> Math.log(x),
+    exp: (x)=> Math.exp(x),
+    pi: Math.PI,
+    e: Math.E,
+    ans: () => ans,
+    root: (n, x) => { // root(n, x) -> nth root of x
+      return Math.pow(x, 1/n);
+    },
+    // convenience: root2( value ) == sqrt(value)
+    root2: (x) => Math.sqrt(x),
+    // percent will be handled in parser by replacing '%' with '/100'
+    abs: Math.abs,
+    floor: Math.floor,
+    ceil: Math.ceil
+  };
+
+  // Evaluate expression safely by mapping tokens to JS friendly form
+  function evaluateExpression(input){
+    if(input.trim() === '') return 0;
+    // Replace special tokens with JS-like identifiers
+    let expr = input;
+
+    // Basic replacements to convert display symbols into JS operators
+    expr = expr.replace(/÷/g, '/').replace(/×/g, '*');
+
+    // Replace occurrences of Ans with function call
+    expr = expr.replace(/Ans/g, 'ans()');
+
+    // Replace percent occurrences: treat as /100 (so 5% => 5/100)
+    // We replace number% with (number/100)
+    expr = expr.replace(/(\d+(\.\d+)?)%/g, '($1/100)');
+
+    // Allow ^ as power: replace a^b with Math.pow(a,b) style
+    // We'll do a loop to convert all ^ uses by a regex that finds left and right operands (simple)
+    // For simplicity handle ^ with a safe approach using parenthesis when present:
+    expr = expr.replace(/\^/g, '**'); // using ES exponent operator
+
+    // Convert x² and x³ shortcuts if present
+    expr = expr.replace(/(\d+(\.\d+)?)\^2/g, '($1**2)');
+    expr = expr.replace(/(\d+(\.\d+)?)\^3/g, '($1**3)');
+
+    // sanitize: allow only certain characters (numbers, operators, letters, parentheses, commas, dot, underscores, asterisks)
+    // But keep function/identifier names a-zA-Z, digits, underscore and dot and operators
+    // Prevent accidental code injection by rejecting if suspicious characters present
+    const forbidden = /[^0-9+\-*/().,a-zA-Z%*_ ]/;
+    if(forbidden.test(expr)) {
+      throw 'Invalid characters';
+    }
+
+    // Now prepare argument list and function to evaluate
+    // We'll pass our mathScope functions as parameters to Function
+    const names = Object.keys(mathScope);
+    const values = names.map(n => mathScope[n]);
+
+    // Build the function that returns the expression
+    // Use "use strict" to be safer
+    const fn = new Function(...names, '"use strict"; return (' + expr + ');');
+
+    // Call it with our functions/properties
+    const result = fn(...values);
+    if(typeof result === 'function') {
+      // If result is a function (e.g. user typed 'sin'), call it with no args -> error
+      throw 'Invalid expression';
+    }
+    if(typeof result === 'number' && !Number.isFinite(result)) throw 'Math error';
+    return result;
+  }
+
+  // Keyboard support
+  window.addEventListener('keydown', (e) => {
+    const key = e.key;
+    if(/^[0-9]$/.test(key)) insertText(key);
+    else if(key === 'Enter') {
+      e.preventDefault();
+      handleAction('equals');
+    } else if(key === 'Backspace') {
+      e.preventDefault();
+      handleAction('del');
+    } else if(key === 'Escape') {
+      handleAction('ac');
+    } else if(key === '.') insertText('.');
+    else if(key === '+') insertText('+');
+    else if(key === '-') insertText('-');
+    else if(key === '*') insertText('×');
+    else if(key === '/') insertText('÷');
+    else if(key === '(') insertText('(');
+    else if(key === ')') insertText(')');
+    else if(key === '^') insertText('^');
+    else if(key === '%') insertText('%');
+  });
+
+  // initial content tidy
+  setText('0');
+
+})();
+</script>
+</body>
+</html>
